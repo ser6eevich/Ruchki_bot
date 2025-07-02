@@ -195,6 +195,18 @@ export default function Dashboard() {
     ))
   }
 
+  // Функция для определения доступных ролей для каждого пользователя
+  const getAvailableRoles = (targetUserId: string): UserRole[] => {
+    const baseRoles: UserRole[] = ["Саппорт", "Администратор"]
+    
+    // Администраторы и Биг-Боссы могут назначать роль Биг-Босса
+    if (currentUser.role === "Администратор" || currentUser.role === "Биг-Босс") {
+      baseRoles.push("Биг-Босс")
+    }
+    
+    return baseRoles
+  }
+
   return (
     <div
       className={`min-h-screen transition-all duration-500 ease-in-out ${
@@ -301,28 +313,21 @@ export default function Dashboard() {
                             {user.createdAt}
                           </TableCell>
                           <TableCell>
-                            {user.id !== currentUser.id && (
-                              <Select
-                                value={user.role}
-                                onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
-                              >
-                                <SelectTrigger className={`w-40 ${isDark ? "bg-gray-800 text-white border-gray-700" : ""}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className={isDark ? "bg-gray-800 text-white border-gray-700" : ""}>
-                                  <SelectItem value="Саппорт">Саппорт</SelectItem>
-                                  <SelectItem value="Администратор">Администратор</SelectItem>
-                                  {currentUser.role === "Биг-Босс" && (
-                                    <SelectItem value="Биг-Босс">Биг-Босс</SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            )}
-                            {user.id === currentUser.id && (
-                              <span className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                                Это вы
-                              </span>
-                            )}
+                            <Select
+                              value={user.role}
+                              onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
+                            >
+                              <SelectTrigger className={`w-40 ${isDark ? "bg-gray-800 text-white border-gray-700" : ""}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className={isDark ? "bg-gray-800 text-white border-gray-700" : ""}>
+                                {getAvailableRoles(user.id).map((role) => (
+                                  <SelectItem key={role} value={role}>
+                                    {role}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                         </TableRow>
                       ))}
