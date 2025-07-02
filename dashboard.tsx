@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Moon, Sun, Search, Plus, Edit, LogOut } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Moon, Sun, Search, Plus, Edit, LogOut, Settings, Users } from "lucide-react"
 import { useState } from "react"
 
 // Типы данных
@@ -17,7 +18,9 @@ type UserRole = "Саппорт" | "Администратор" | "Биг-Бос
 type User = {
   id: string
   name: string
+  email: string
   role: UserRole
+  createdAt: string
 }
 
 type Category =
@@ -45,8 +48,41 @@ type Case = {
 const currentUser: User = {
   id: "1",
   name: "Иван Курганский",
+  email: "ivan@example.com",
   role: "Администратор",
+  createdAt: "15 января 2025",
 }
+
+const mockUsers: User[] = [
+  {
+    id: "1",
+    name: "Иван Курганский",
+    email: "ivan@example.com",
+    role: "Администратор",
+    createdAt: "15 января 2025",
+  },
+  {
+    id: "2",
+    name: "Кирилл Захаров",
+    email: "kirill@example.com",
+    role: "Саппорт",
+    createdAt: "20 января 2025",
+  },
+  {
+    id: "3",
+    name: "Анна Петрова",
+    email: "anna@example.com",
+    role: "Саппорт",
+    createdAt: "22 января 2025",
+  },
+  {
+    id: "4",
+    name: "Михаил Сидоров",
+    email: "mikhail@example.com",
+    role: "Биг-Босс",
+    createdAt: "10 января 2025",
+  },
+]
 
 const mockCases: Case[] = [
   {
@@ -82,8 +118,8 @@ const categories: Category[] = [
   "Уведомления",
 ]
 
-const canSeeAdminPanel = true // Declare canSeeAdminPanel variable
-const canEditAllCases = true // Declare canEditAllCases variable
+const canSeeAdminPanel = currentUser.role === "Администратор" || currentUser.role === "Биг-Босс"
+const canEditAllCases = currentUser.role === "Администратор" || currentUser.role === "Биг-Босс"
 
 const getAvatarColor = (role: UserRole): string => {
   switch (role) {
@@ -98,17 +134,32 @@ const getAvatarColor = (role: UserRole): string => {
   }
 }
 
+const getRoleBadgeColor = (role: UserRole): string => {
+  switch (role) {
+    case "Саппорт":
+      return "bg-green-100 text-green-800"
+    case "Администратор":
+      return "bg-blue-100 text-blue-800"
+    case "Биг-Босс":
+      return "bg-red-100 text-red-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
+}
+
 const handleCreateCase = () => {
   // Logic to handle case creation
 }
 
-const filteredCases = mockCases // Declare filteredCases variable
+const filteredCases = mockCases
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"knowledge" | "my-cases" | "admin">("knowledge")
+  const [activeTab, setActiveTab] = useState<"knowledge" | "my-cases">("knowledge")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all")
   const [isCreateCaseOpen, setIsCreateCaseOpen] = useState(false)
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false)
+  const [users, setUsers] = useState<User[]>(mockUsers)
   const [newCase, setNewCase] = useState({
     title: "",
     question: "",
@@ -131,12 +182,17 @@ export default function Dashboard() {
     setTimeout(() => {
       const newTheme = !isDark
       setIsDark(newTheme)
-      // Save theme to localStorage
       localStorage.setItem("theme", newTheme ? "dark" : "light")
       setTimeout(() => {
         setIsTransitioning(false)
       }, 100)
     }, 150)
+  }
+
+  const handleRoleChange = (userId: string, newRole: UserRole) => {
+    setUsers(users.map(user => 
+      user.id === userId ? { ...user, role: newRole } : user
+    ))
   }
 
   return (
@@ -176,14 +232,105 @@ export default function Dashboard() {
             Мои кейсы
           </button>
           {canSeeAdminPanel && (
-            <button
-              onClick={() => setActiveTab("admin")}
-              className={`transition-colors ${
-                isDark ? "text-white hover:text-white/80" : "text-gray-800 hover:text-gray-600"
-              } ${activeTab === "admin" ? "font-semibold" : ""}`}
-            >
-              Админ-панель
-            </button>
+            <Dialog open={isAdminPanelOpen} onOpenChange={setIsAdminPanelOpen}>
+              <DialogTrigger asChild>
+                <button
+                  className={`transition-colors ${
+                    isDark ? "text-white hover:text-white/80" : "text-gray-800 hover:text-gray-600"
+                  }`}
+                >
+                  Админ-панель
+                </button>
+              </DialogTrigger>
+              <DialogContent
+                className={`max-w-4xl max-h-[80vh] overflow-y-auto transition-all duration-500 ${
+                  isDark ? "bg-gray-900 text-white border-gray-700" : ""
+                }`}
+              >
+                <DialogHeader>
+                  <DialogTitle className={`flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
+                    <Users className="w-5 h-5" />
+                    Управление пользователями
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <p className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                      Управление ролями пользователей системы
+                    </p>
+                    <Badge variant="secondary" className={isDark ? "bg-gray-700 text-gray-300" : ""}>
+                      Всего пользователей: {users.length}
+                    </Badge>
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow className={isDark ? "border-gray-700" : ""}>
+                        <TableHead className={isDark ? "text-gray-300" : ""}>Пользователь</TableHead>
+                        <TableHead className={isDark ? "text-gray-300" : ""}>Email</TableHead>
+                        <TableHead className={isDark ? "text-gray-300" : ""}>Роль</TableHead>
+                        <TableHead className={isDark ? "text-gray-300" : ""}>Дата регистрации</TableHead>
+                        <TableHead className={isDark ? "text-gray-300" : ""}>Действия</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id} className={isDark ? "border-gray-700" : ""}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="w-8 h-8">
+                                <AvatarFallback className={`${getAvatarColor(user.role)} text-white text-xs`}>
+                                  {user.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className={isDark ? "text-white" : ""}>{user.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className={isDark ? "text-gray-300" : "text-gray-600"}>
+                            {user.email}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getRoleBadgeColor(user.role)}>
+                              {user.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={isDark ? "text-gray-300" : "text-gray-600"}>
+                            {user.createdAt}
+                          </TableCell>
+                          <TableCell>
+                            {user.id !== currentUser.id && (
+                              <Select
+                                value={user.role}
+                                onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
+                              >
+                                <SelectTrigger className={`w-40 ${isDark ? "bg-gray-800 text-white border-gray-700" : ""}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className={isDark ? "bg-gray-800 text-white border-gray-700" : ""}>
+                                  <SelectItem value="Саппорт">Саппорт</SelectItem>
+                                  <SelectItem value="Администратор">Администратор</SelectItem>
+                                  {currentUser.role === "Биг-Босс" && (
+                                    <SelectItem value="Биг-Босс">Биг-Босс</SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {user.id === currentUser.id && (
+                              <span className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                                Это вы
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
         </nav>
 
@@ -252,7 +399,6 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold mb-6">
             {activeTab === "knowledge" && "Общая база знаний"}
             {activeTab === "my-cases" && "Мои кейсы"}
-            {activeTab === "admin" && "Администрирование"}
           </h2>
 
           <div className="space-y-2">
