@@ -196,7 +196,7 @@ export default function Dashboard() {
           <img
             src={isDark ? "/logo-dark.png" : "/logo-light.png"}
             alt="SRP Logo"
-            className="h-12 w-auto transition-all duration-500"
+            className="h-14 w-auto transition-all duration-500"
           />
         </div>
 
